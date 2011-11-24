@@ -83,7 +83,7 @@ class IMDb
 			print 'cURL Error '.$curl_errno.': '.$curl_error;
 		}
         
-        // Return the JSON
+		// Return the JSON
 		if(!empty($json)) return json_decode($json);
 	}
 	
