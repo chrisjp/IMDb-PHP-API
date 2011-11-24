@@ -37,9 +37,7 @@ class IMDb
 	
 	// Search IMDb by title of film
 	function find_by_title($title){
-		$requestURL = $this->build_url('find', $title, 'q');
-		print 'URL: '.str_replace('&', '&amp;', $requestURL).'<br/><br />';
-		
+		$requestURL = $this->build_url('find', $title, 'q');		
 		$json = $this->fetchJSON($requestURL);
 		
 		// We'll usually have several "lists" returned in the JSON. Combine all these into one array.
@@ -56,8 +54,6 @@ class IMDb
 	// Search IMDb by ID of film
 	function find_by_id($id){
 		$requestURL = $this->build_url('title/maindetails', $id, 'tconst');
-		print 'URL: '.str_replace('&', '&amp;', $requestURL).'<br/><br />';
-		
 		$json = $this->fetchJSON($requestURL);
 
 		$data = $json->data;
@@ -79,7 +75,7 @@ class IMDb
 		curl_setopt($ch, CURLOPT_VERBOSE, 1); 
 		$json = curl_exec($ch);
 		$curl_errno = curl_errno($ch);
-        $curl_error = curl_error($ch);
+		$curl_error = curl_error($ch);
 		curl_close($ch);
 		
 		// Errors?
@@ -92,7 +88,8 @@ class IMDb
 	}
 	
 	function __destruct(){
-		//
+		// nothing to do here...
 	}
+
 }
 ?>
