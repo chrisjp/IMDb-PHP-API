@@ -57,9 +57,57 @@ class IMDb
 		$requestURL = $this->build_url('title/maindetails', $id, 'tconst');
 		$json = $this->fetchJSON($requestURL);
 
-		$data = $json->data;
+		$data = $this->handleData($json->data);
 		
 		return $data;
+	}
+	
+	// Perform some operations on some of the data we're holding
+	// Adds the following data to the object:
+	//
+	//  + id - IMDb ID without the 'tt' prefix
+	//  + genre - comma-seperated list of genres
+	//  + writer - comma-seperated list of writer(s)
+	//  + director - comma-separated list of director(s)
+	//  + actors - comma-seperated list of actors
+	//  + released - shorthand release date in the format of 'd MMM YYYY'
+	//
+	// TODO: Make this work with data from find_by_title
+	function handleData($obj){
+		// ID without 'tt' prefix
+		$obj->id = substr($obj->tconst, 2);
+		
+		// Comma-seperated list of genres (this is always an array)
+		$obj->genre = implode(", ", $obj->genres);
+		
+		// Comma-seperated list of writer(s)
+		if(is_array($obj->writers_summary)){
+			foreach($obj->writers_summary as $writers){ $writer[] = $writers->name->name; }
+			$obj->writer = implode(", ", $writer);
+		}else{
+			$obj->writer = "";
+		}
+		
+		// Comma-seperated list of director(s)
+		if(is_array($obj->directors_summary)){
+			foreach($obj->directors_summary as $directors){ $director[] = $directors->name->name; }
+			$obj->director = implode(", ", $director);
+		}else{
+			$obj->director = "";
+		}
+		
+		// Comma-seperated list of actors
+		if(is_array($obj->directors_summary)){
+			foreach($obj->cast_summary as $cast){ $actor[] = $cast->name->name; }
+			$obj->actors = implode(", ", $actor);
+		}else{
+			$obj->actors = "";
+		}
+		
+		// Shorthand release date in the format of 'd MMM YYYY'
+		$obj->released = !empty($obj->release_date->normal) ? date('j M Y', strtotime($obj->release_date->normal)) : "";
+		
+		return $obj;
 	}
 	
 	
@@ -86,10 +134,6 @@ class IMDb
         
 		// Return the JSON
 		if(!empty($json)) return json_decode($json);
-	}
-	
-	function __destruct(){
-		// nothing to do here...
 	}
 
 }
