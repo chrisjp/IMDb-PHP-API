@@ -53,6 +53,7 @@ class IMDb
 	
 	// Search IMDb by ID of film
 	function find_by_id($id){
+		if(strpos($id, "tt")!==0) $id = "tt".$id;
 		$requestURL = $this->build_url('title/maindetails', $id, 'tconst');
 		$json = $this->fetchJSON($requestURL);
 
