@@ -18,6 +18,12 @@ class IMDb
 	// feature, short, documentary, video, tv_series, tv_special, video_game
 	// Titles whose category is in the $ignoreTypes array below will be removed from your results
 	public $ignoreTypes = array('tv_series','tv_special','video_game');
+	
+	// By default, X rated titles and titles in the genre 'Adult' will also be ignored. Set to false to allow them.
+	public $ignoreAdult = true;
+	
+	// Setting the following option to true will allow you to override any ignore options and force the title to be returned with find_by_id()
+	public $forceReturn = false;
 			
 	function __construct($anonymise=false, $summary=true, $titlesLimit=0){
 		if($anonymise) 				$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
@@ -92,7 +98,7 @@ class IMDb
 	function summarise($obj){
 	
 		// If this is not an ignored type...
-		if(!in_array($obj->type, $this->ignoreTypes)){
+		if(!$this->is_ignored($obj->type, $obj->certificate->certificate, $obj->genres[0])){
 			// ID with and without 'tt' prefix
 			$s->id = substr($obj->tconst, 2);
 			$s->tconst = $obj->tconst;
@@ -158,7 +164,7 @@ class IMDb
 			// Response messages
 			$s->response = 0;
 			$s->response_msg = "Fail";
-			$s->message = "Film type '".$obj->type."' is ignored.";
+			$s->message = "Film type is ignored.";
 		}
 		
 		return $s;
@@ -174,7 +180,7 @@ class IMDb
 			
 			// In each "list" of results we only want to return titles so ignore other results such as actors, characters etc.
 			foreach($list as $obj){
-				if(!empty($obj->tconst) AND !in_array($obj->type, $this->ignoreTypes)){
+				if(!empty($obj->tconst) AND !$this->is_ignored($obj->type)){
 					// ID with and without 'tt' prefix
 					$s[$t]->id = substr($obj->tconst, 2);
 					$s[$t]->tconst = $obj->tconst;
@@ -219,6 +225,15 @@ class IMDb
 		}
 		
 		return $s;
+	}
+	
+	// Check if a title should be ignored. Returns true for yes, false for no.
+	function is_ignored($type, $cert="", $genre=""){
+		if($this->forceReturn) return false;
+		if(in_array($type, $this->ignoreTypes)) return true;
+		if($this->ignoreAdult AND ($cert=="X" OR $genre=="Adult")) return true;
+		
+		return false;
 	}
 	
 	// Basic error handling
