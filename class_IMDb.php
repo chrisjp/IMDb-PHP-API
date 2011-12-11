@@ -12,7 +12,7 @@ class IMDb
 					  );
 	private $anonymiser = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// URL that will be prepended to the generated API URL.
 	public $summary = true;			// Set to true to return a summary of the film's details. Set to false to return everything.
-	public $titlesLimit = 0;		// TODO: Limit the number of films returned by find_by_title(). 0 = unlimited.
+	public $titlesLimit = 0;		// Limit the number of films returned by find_by_title() when summarised. 0 = unlimited (NOTE: IMDb returns a maximum of 50 results).
 			
 	function __construct($anonymise=false, $summary=true, $titlesLimit=0){
 		if($anonymise) 		$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
@@ -38,30 +38,6 @@ class IMDb
 		return $url;
 	}
 	
-	// Search IMDb by title of film
-	function find_by_title($title){
-		$requestURL = $this->build_url('find', $title, 'q');		
-		$json = $this->fetchJSON($requestURL);
-		
-		// We'll usually have several "lists" returned in the JSON. Combine all these into one array.
-		if(empty($json->data->results)){
-			// IMDb doesn't return a proper error response in the event of 0 results being returned
-			// so set our own failure message.
-			$error->message = "No results found.";
-			$matches = $this->errorResponse($error);
-		}
-		else{
-			$results = $json->data->results;
-			$matches = array();
-			
-			for($i=0; $i<count($results); $i++){
-				$matches = array_merge($matches, $results[$i]->list);
-			}
-		}
-		
-		return $matches;
-	}
-	
 	// Search IMDb by ID of film
 	function find_by_id($id){
 		if(strpos($id, "tt")!==0) $id = "tt".$id;
@@ -78,8 +54,36 @@ class IMDb
 		return $data;
 	}
 	
-	// Summarise - only return the most pertinent data
-	// TODO: Make this work with data from find_by_title (multiple results)
+	// Search IMDb by title of film
+	function find_by_title($title){
+		$requestURL = $this->build_url('find', $title, 'q');		
+		$json = $this->fetchJSON($requestURL);
+		
+		// We'll usually have several "lists" returned in the JSON. Combine all these into one array.
+		if(empty($json->data->results)){
+			// IMDb doesn't return a proper error response in the event of 0 results being returned
+			// so set our own failure message.
+			$error->message = "No results found.";
+			$matches = $this->errorResponse($error);
+		}
+		else{
+			$results = $json->data->results;
+			$matches = array();
+			
+			if($this->summary){
+				$matches = $this->summarise_titles($results);
+			}
+			else{
+				for($i=0; $i<count($results); $i++){
+					$matches = array_merge($matches, $results[$i]->list);
+				}
+			}
+		}
+		
+		return $matches;
+	}
+	
+	// Summarise - only return the most pertinent data (when returning data from IMDb ID)
 	function summarise($obj){	
 		
 		// ID with and without 'tt' prefix
@@ -136,9 +140,69 @@ class IMDb
 		// Poster
 		$s->poster = $obj->image->url;
 		
+		// Type
+		$s->type = $obj->type;
+		
 		// Response messages
 		$s->response = 1;
 		$s->response_msg = "Success";
+		
+		return $s;
+	}
+	
+	// Summarise - only return the most pertinent data (when returning multiple title data)
+	function summarise_titles($objs){
+		
+		$t=0;
+				
+		for($i=0; $i<count($objs); $i++){
+			$list = $objs[$i]->list;
+			
+			// In each "list" of results we only want to return titles so ignore other results such as actors, characters etc.
+			foreach($list as $obj){
+				if(!empty($obj->tconst)){
+					// ID with and without 'tt' prefix
+					$s[$t]->id = substr($obj->tconst, 2);
+					$s[$t]->tconst = $obj->tconst;
+					
+					// Title
+					$s[$t]->title = $obj->title;
+					
+					// Year
+					$s[$t]->year = $obj->year;
+					
+					// Comma-seperated list of actors
+					$actor = array();
+					if(is_array($obj->principals)){
+						foreach($obj->principals as $cast){ $actor[] = $cast->name; }
+						$s[$t]->actors = implode(", ", $actor);
+					}else{
+						$s[$t]->actors = "";
+					}
+					
+					// Poster
+					$s[$t]->poster = $obj->image->url;
+					
+					// Type
+					$s[$t]->type = $obj->type;
+					
+					$t++;
+					
+					// Reached limit of titles?
+					if($t==$this->titlesLimit) break;
+				}
+			}
+		}
+		
+		// Response messages
+		if($t>0){
+			$s['response'] = 1;
+			$s['response_msg'] = "Success";
+		}
+		else{
+			$s['response'] = 0;
+			$s['response_msg'] = "Fail";
+		}
 		
 		return $s;
 	}
