@@ -15,9 +15,9 @@ class IMDb
 	public $titlesLimit = 0;		// Limit the number of films returned by find_by_title() when summarised. 0 = unlimited (NOTE: IMDb returns a maximum of 50 results).
 			
 	function __construct($anonymise=false, $summary=true, $titlesLimit=0){
-		if($anonymise) 		$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
-		if(!$summary) 		$this->summary=false;									// overriding the default?
-		if($titlesLimit>0)	$this->titlesLimit = $titlesLimit;						// Set titles limit if required
+		if($anonymise) 				$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
+		if(!$summary) 				$this->summary=false;									// overriding the default?
+		if(intval($titlesLimit)>0)	$this->titlesLimit = intval($titlesLimit);				// Set titles limit if required
 	}
 	
 	// Build URL based on the given parameters
@@ -189,7 +189,7 @@ class IMDb
 					$t++;
 					
 					// Reached limit of titles?
-					if($t==$this->titlesLimit) break;
+					if($t==$this->titlesLimit) break 2;
 				}
 			}
 		}
