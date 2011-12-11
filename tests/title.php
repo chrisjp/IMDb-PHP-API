@@ -14,14 +14,17 @@ $q = trim(stripslashes($_GET['q']));
 
 <p>Enter a search term to return data for matching movie titles. Example: <em>The Godfather</em></p>
 <form action="" method="get">
-<input type="text" name="q" value="<?=$q?>" /> <input type="submit" value="Search" />
+<input type="text" name="q" value="<?=$q?>" /> <input type="submit" value="Search" /><br />
+<input id="nosummary" type="checkbox" name="nosummary"<? if($_GET['nosummary']=="on") print ' checked="checked"'?> /> <label for="nosummary">Do NOT summarise?</label><br />
+<input type="text" name="limit" value="<?=intval($_GET['limit'])?>" maxlength="2" /> Max. titles returned
 </form>
 <br />
 
 <?php
 if(!empty($q)){
 	print '<h2>Results</h2>';
-	
+	if($_GET['nosummary']=="on") $imdb->summary=false;
+	if(intval($_GET['limit'])>0) $imdb->titlesLimit = intval($_GET['limit']);
 	$movies = $imdb->find_by_title($q);
 
 	print '<pre>';
