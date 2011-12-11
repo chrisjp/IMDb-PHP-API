@@ -10,12 +10,12 @@ class IMDb
 						'apiKey'	=> '2wex6aeu6a8q9e49k7sfvufd6rhh0n',
 						'locale'	=> 'en_US',
 					  );
-	private $anonymizer = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// URL that will be prepended to the generated API URL.
+	private $anonymiser = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// URL that will be prepended to the generated API URL.
 	public $summary = true;			// Set to true to return a summary of the film's details. Set to false to return everything.
 	public $titlesLimit = 0;		// TODO: Limit the number of films returned by find_by_title(). 0 = unlimited.
 			
-	function __construct($anonymize=false, $summary=true, $titlesLimit=0){
-		if($anonymize) 		$this->baseurl = $this->anonymizer . $this->baseurl;	// prepend anonymizer to baseurl if needed
+	function __construct($anonymise=false, $summary=true, $titlesLimit=0){
+		if($anonymise) 		$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
 		if(!$summary) 		$this->summary=false;									// overriding the default?
 		if($titlesLimit>0)	$this->titlesLimit = $titlesLimit;						// Set titles limit if required
 	}
