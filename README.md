@@ -4,8 +4,8 @@
 
 ### Create an instance
 
-    $imdb = new IMDb;
-    $imdb = new IMDb(true);	// this will anonymize your requests to prevent your IP address getting banned
+    // IMDb ( [bool $anonymise = false [, bool $summary = true [, int $titlesLimit = 0]]] )
+    $imdb = new IMDb(true, true, 0);	// anonymise requests to prevent IP address getting banned, summarise returned data, unlimited films returned
 
 
 ### Search for a movie by title
