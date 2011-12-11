@@ -13,6 +13,11 @@ class IMDb
 	private $anonymiser = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// URL that will be prepended to the generated API URL.
 	public $summary = true;			// Set to true to return a summary of the film's details. Set to false to return everything.
 	public $titlesLimit = 0;		// Limit the number of films returned by find_by_title() when summarised. 0 = unlimited (NOTE: IMDb returns a maximum of 50 results).
+	
+	// You can prevent certain types of titles being returned. IMDb classifies titles under one of the following categories:
+	// feature, short, documentary, video, tv_series, tv_special, video_game
+	// Titles whose category is in the $ignoreTypes array below will be removed from your results
+	public $ignoreTypes = array('tv_series','tv_special','video_game');
 			
 	function __construct($anonymise=false, $summary=true, $titlesLimit=0){
 		if($anonymise) 				$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
@@ -84,68 +89,77 @@ class IMDb
 	}
 	
 	// Summarise - only return the most pertinent data (when returning data from IMDb ID)
-	function summarise($obj){	
-		
-		// ID with and without 'tt' prefix
-		$s->id = substr($obj->tconst, 2);
-		$s->tconst = $obj->tconst;
-		
-		// Title
-		$s->title = $obj->title;
-		
-		// Year
-		$s->year = $obj->year;
-		
-		// Plot
-		$s->plot = $obj->plot->outline;
-		
-		// Votes + Rating
-		$s->rating = $obj->rating;
-		$s->votes = $obj->num_votes;
-		
-		// Comma-seperated list of genres (this is always an array)
-		$s->genre = implode(", ", $obj->genres);
-		
-		// Comma-seperated list of writer(s)
-		if(is_array($obj->writers_summary)){
-			foreach($obj->writers_summary as $writers){ $writer[] = $writers->name->name; }
-			$s->writer = implode(", ", $writer);
-		}else{
-			$s->writer = "";
+	function summarise($obj){
+	
+		// If this is not an ignored type...
+		if(!in_array($obj->type, $this->ignoreTypes)){
+			// ID with and without 'tt' prefix
+			$s->id = substr($obj->tconst, 2);
+			$s->tconst = $obj->tconst;
+			
+			// Title
+			$s->title = $obj->title;
+			
+			// Year
+			$s->year = $obj->year;
+			
+			// Plot
+			$s->plot = $obj->plot->outline;
+			
+			// Votes + Rating
+			$s->rating = $obj->rating;
+			$s->votes = $obj->num_votes;
+			
+			// Comma-seperated list of genres (this is always an array)
+			$s->genre = implode(", ", $obj->genres);
+			
+			// Comma-seperated list of writer(s)
+			if(is_array($obj->writers_summary)){
+				foreach($obj->writers_summary as $writers){ $writer[] = $writers->name->name; }
+				$s->writer = implode(", ", $writer);
+			}else{
+				$s->writer = "";
+			}
+			
+			// Comma-seperated list of director(s)
+			if(is_array($obj->directors_summary)){
+				foreach($obj->directors_summary as $directors){ $director[] = $directors->name->name; }
+				$s->director = implode(", ", $director);
+			}else{
+				$s->director = "";
+			}
+			
+			// Comma-seperated list of actors
+			if(is_array($obj->directors_summary)){
+				foreach($obj->cast_summary as $cast){ $actor[] = $cast->name->name; }
+				$s->actors = implode(", ", $actor);
+			}else{
+				$s->actors = "";
+			}
+			
+			// Shorthand release date in the format of 'd MMM YYYY' and datestamp
+			$s->released = !empty($obj->release_date->normal) ? date('j M Y', strtotime($obj->release_date->normal)) : "";
+			$s->release_datestamp = $obj->release_date->normal;
+			
+			// Certificate
+			$s->certificate = $obj->certificate->certificate;
+			
+			// Poster
+			$s->poster = $obj->image->url;
+			
+			// Type
+			$s->type = $obj->type;
+			
+			// Response messages
+			$s->response = 1;
+			$s->response_msg = "Success";
 		}
-		
-		// Comma-seperated list of director(s)
-		if(is_array($obj->directors_summary)){
-			foreach($obj->directors_summary as $directors){ $director[] = $directors->name->name; }
-			$s->director = implode(", ", $director);
-		}else{
-			$s->director = "";
+		else{
+			// Response messages
+			$s->response = 0;
+			$s->response_msg = "Fail";
+			$s->message = "Film type '".$obj->type."' is ignored.";
 		}
-		
-		// Comma-seperated list of actors
-		if(is_array($obj->directors_summary)){
-			foreach($obj->cast_summary as $cast){ $actor[] = $cast->name->name; }
-			$s->actors = implode(", ", $actor);
-		}else{
-			$s->actors = "";
-		}
-		
-		// Shorthand release date in the format of 'd MMM YYYY' and datestamp
-		$s->released = !empty($obj->release_date->normal) ? date('j M Y', strtotime($obj->release_date->normal)) : "";
-		$s->release_datestamp = $obj->release_date->normal;
-		
-		// Certificate
-		$s->certificate = $obj->certificate->certificate;
-		
-		// Poster
-		$s->poster = $obj->image->url;
-		
-		// Type
-		$s->type = $obj->type;
-		
-		// Response messages
-		$s->response = 1;
-		$s->response_msg = "Success";
 		
 		return $s;
 	}
@@ -160,7 +174,7 @@ class IMDb
 			
 			// In each "list" of results we only want to return titles so ignore other results such as actors, characters etc.
 			foreach($list as $obj){
-				if(!empty($obj->tconst)){
+				if(!empty($obj->tconst) AND !in_array($obj->type, $this->ignoreTypes)){
 					// ID with and without 'tt' prefix
 					$s[$t]->id = substr($obj->tconst, 2);
 					$s[$t]->tconst = $obj->tconst;
