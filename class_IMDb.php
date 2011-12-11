@@ -66,7 +66,7 @@ class IMDb
 	}
 	
 	// Search IMDb by title of film
-	function find_by_title($title){
+	function find_by_title($title, $year=0){
 		$requestURL = $this->build_url('find', $title, 'q');		
 		$json = $this->fetchJSON($requestURL);
 		
@@ -82,7 +82,7 @@ class IMDb
 			$matches = array();
 			
 			if($this->summary){
-				$matches = $this->summarise_titles($results);
+				$matches = $this->summarise_titles($results, intval($year));
 			}
 			else{
 				for($i=0; $i<count($results); $i++){
@@ -171,7 +171,7 @@ class IMDb
 	}
 	
 	// Summarise - only return the most pertinent data (when returning multiple title data)
-	function summarise_titles($objs){
+	function summarise_titles($objs, $yearMatch=0){
 		
 		$t=0;
 				
@@ -180,7 +180,7 @@ class IMDb
 			
 			// In each "list" of results we only want to return titles so ignore other results such as actors, characters etc.
 			foreach($list as $obj){
-				if(!empty($obj->tconst) AND !$this->is_ignored($obj->type)){
+				if(!empty($obj->tconst) AND !$this->is_ignored($obj->type) AND $this->yearMatch($obj->year, $yearMatch)){
 					// ID with and without 'tt' prefix
 					$s[$t]->id = substr($obj->tconst, 2);
 					$s[$t]->tconst = $obj->tconst;
@@ -233,6 +233,13 @@ class IMDb
 		if(in_array($type, $this->ignoreTypes)) return true;
 		if($this->ignoreAdult AND ($cert=="X" OR $genre=="Adult")) return true;
 		
+		return false;
+	}
+	
+	// Check year matches
+	function yearMatch($year, $yearMatch){
+		if($yearMatch===0) return true;
+		if($yearMatch==$year) return true;
 		return false;
 	}
 	

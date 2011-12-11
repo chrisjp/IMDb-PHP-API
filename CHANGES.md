@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.2.2 - December 11, 2011
+* find_by_title() now accepts optional 'year' parameter to limit results to titles from a given year
+
 ## v0.2.1 - December 11, 2011
 * Option to ignore certain types of film, by default, tv_series, tv_special and video_game types are ignored
 * Option to ignore Adult genre or X rated films - this is turned on by default
