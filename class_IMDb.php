@@ -147,6 +147,9 @@ class IMDb
 			$s->released = !empty($obj->release_date->normal) ? date('j M Y', strtotime($obj->release_date->normal)) : "";
 			$s->release_datestamp = $obj->release_date->normal;
 			
+			// Runtime
+			$s->runtime = round($obj->runtime->time/60);
+			
 			// Certificate
 			$s->certificate = $obj->certificate->certificate;
 			

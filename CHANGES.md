@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.2.3 - December 11, 2011
+* Added runtime (in minutes) to returned data from find_by_id().
+
 ## v0.2.2 - December 11, 2011
 * find_by_title() now accepts optional 'year' parameter to limit results to titles from a given year
 
