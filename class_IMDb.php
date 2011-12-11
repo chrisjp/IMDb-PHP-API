@@ -10,14 +10,17 @@ class IMDb
 						'apiKey'	=> '2wex6aeu6a8q9e49k7sfvufd6rhh0n',
 						'locale'	=> 'en_US',
 					  );
-	private $anonymizer = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// Real URL will be appended to this
-	
+	private $anonymizer = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// URL that will be prepended to the generated API URL.
+	public $summary = true;			// Set to true to return a summary of the film's details. Set to false to return everything.
+	public $titlesLimit = 0;		// TODO: Limit the number of films returned by find_by_title(). 0 = unlimited.
 			
-	function __construct($anonymize=false){
-		if($anonymize) $this->baseurl = $this->anonymizer . $this->baseurl;	// prepend anonymizer to baseurl if needed
+	function __construct($anonymize=false, $summary=true, $titlesLimit=0){
+		if($anonymize) 		$this->baseurl = $this->anonymizer . $this->baseurl;	// prepend anonymizer to baseurl if needed
+		if(!$summary) 		$this->summary=false;									// overriding the default?
+		if($titlesLimit>0)	$this->titlesLimit = $titlesLimit;						// Set titles limit if required
 	}
 	
-	
+	// Build URL based on the given parameters
 	function build_url($method, $query, $parameter){
 		$url = $this->baseurl.$method.'?';
 		
@@ -41,11 +44,19 @@ class IMDb
 		$json = $this->fetchJSON($requestURL);
 		
 		// We'll usually have several "lists" returned in the JSON. Combine all these into one array.
-		$results = $json->data->results;
-		$matches = array();
-		
-		for($i=0; $i<count($results); $i++){
-			$matches = array_merge($matches, $results[$i]->list);
+		if(empty($json->data->results)){
+			// IMDb doesn't return a proper error response in the event of 0 results being returned
+			// so set our own failure message.
+			$error->message = "No results found.";
+			$matches = $this->errorResponse($error);
+		}
+		else{
+			$results = $json->data->results;
+			$matches = array();
+			
+			for($i=0; $i<count($results); $i++){
+				$matches = array_merge($matches, $results[$i]->list);
+			}
 		}
 		
 		return $matches;
@@ -57,57 +68,90 @@ class IMDb
 		$requestURL = $this->build_url('title/maindetails', $id, 'tconst');
 		$json = $this->fetchJSON($requestURL);
 
-		$data = $this->handleData($json->data);
+		if(is_object($json->error)){
+			$data = $this->errorResponse($json->error);
+		}
+		else{
+			$data = $this->summary ? $this->summarise($json->data) : $json->data;
+		}
 		
 		return $data;
 	}
 	
-	// Perform some operations on some of the data we're holding
-	// Adds the following data to the object:
-	//
-	//  + id - IMDb ID without the 'tt' prefix
-	//  + genre - comma-seperated list of genres
-	//  + writer - comma-seperated list of writer(s)
-	//  + director - comma-separated list of director(s)
-	//  + actors - comma-seperated list of actors
-	//  + released - shorthand release date in the format of 'd MMM YYYY'
-	//
-	// TODO: Make this work with data from find_by_title
-	function handleData($obj){
-		// ID without 'tt' prefix
-		$obj->id = substr($obj->tconst, 2);
+	// Summarise - only return the most pertinent data
+	// TODO: Make this work with data from find_by_title (multiple results)
+	function summarise($obj){	
+		
+		// ID with and without 'tt' prefix
+		$s->id = substr($obj->tconst, 2);
+		$s->tconst = $obj->tconst;
+		
+		// Title
+		$s->title = $obj->title;
+		
+		// Year
+		$s->year = $obj->year;
+		
+		// Plot
+		$s->plot = $obj->plot->outline;
+		
+		// Votes + Rating
+		$s->rating = $obj->rating;
+		$s->votes = $obj->num_votes;
 		
 		// Comma-seperated list of genres (this is always an array)
-		$obj->genre = implode(", ", $obj->genres);
+		$s->genre = implode(", ", $obj->genres);
 		
 		// Comma-seperated list of writer(s)
 		if(is_array($obj->writers_summary)){
 			foreach($obj->writers_summary as $writers){ $writer[] = $writers->name->name; }
-			$obj->writer = implode(", ", $writer);
+			$s->writer = implode(", ", $writer);
 		}else{
-			$obj->writer = "";
+			$s->writer = "";
 		}
 		
 		// Comma-seperated list of director(s)
 		if(is_array($obj->directors_summary)){
 			foreach($obj->directors_summary as $directors){ $director[] = $directors->name->name; }
-			$obj->director = implode(", ", $director);
+			$s->director = implode(", ", $director);
 		}else{
-			$obj->director = "";
+			$s->director = "";
 		}
 		
 		// Comma-seperated list of actors
 		if(is_array($obj->directors_summary)){
 			foreach($obj->cast_summary as $cast){ $actor[] = $cast->name->name; }
-			$obj->actors = implode(", ", $actor);
+			$s->actors = implode(", ", $actor);
 		}else{
-			$obj->actors = "";
+			$s->actors = "";
 		}
 		
-		// Shorthand release date in the format of 'd MMM YYYY'
-		$obj->released = !empty($obj->release_date->normal) ? date('j M Y', strtotime($obj->release_date->normal)) : "";
+		// Shorthand release date in the format of 'd MMM YYYY' and datestamp
+		$s->released = !empty($obj->release_date->normal) ? date('j M Y', strtotime($obj->release_date->normal)) : "";
+		$s->release_datestamp = $obj->release_date->normal;
 		
-		return $obj;
+		// Certificate
+		$s->certificate = $obj->certificate->certificate;
+		
+		// Poster
+		$s->poster = $obj->image->url;
+		
+		// Response messages
+		$s->response = 1;
+		$s->response_msg = "Success";
+		
+		return $s;
+	}
+	
+	// Basic error handling
+	function errorResponse($obj){
+		$s->status = $obj->status;
+		$s->code = $obj->code;
+		$s->message = $obj->message;
+		$s->response = 0;
+		$s->response_msg = "Fail";
+		
+		return $s;
 	}
 	
 	
@@ -118,7 +162,7 @@ class IMDb
 		$headers[] = 'Content-type: text/plain;charset=UTF-8'; 
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
 		curl_setopt($ch, CURLOPT_HEADER, 0); 
-		curl_setopt($ch, CURLOPT_TIMEOUT, 15); 
+		curl_setopt($ch, CURLOPT_TIMEOUT, 0); 
 		curl_setopt($ch, CURLOPT_ENCODING , 'deflate');
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
 		curl_setopt($ch, CURLOPT_VERBOSE, 1); 
@@ -128,12 +172,15 @@ class IMDb
 		curl_close($ch);
 		
 		// Errors?
-		if ($curl_errno > 0) {
-			print 'cURL Error '.$curl_errno.': '.$curl_error;
+		if ($curl_errno > 0){
+			$data->error->message = 'cURL Error '.$curl_errno.': '.$curl_error;
 		}
-        
-		// Return the JSON
-		if(!empty($json)) return json_decode($json);
+		else{	        
+			// Decode the JSON response
+			$data = json_decode($json);
+		}
+		
+		return $data;
 	}
 
 }
