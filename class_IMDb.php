@@ -64,7 +64,7 @@ class IMDb
 			// IMDb doesn't return a proper error response in the event of 0 results being returned
 			// so set our own failure message.
 			$error->message = "No results found.";
-			$matches = $this->errorResponse($error);
+			$matches = $this->errorResponse($error, true);
 		}
 		else{
 			$results = $json->data->results;
@@ -208,14 +208,15 @@ class IMDb
 	}
 	
 	// Basic error handling
-	function errorResponse($obj){
+	function errorResponse($obj, $returnArray=false){
 		$s->status = $obj->status;
 		$s->code = $obj->code;
 		$s->message = $obj->message;
 		$s->response = 0;
 		$s->response_msg = "Fail";
 		
-		return $s;
+		if($returnArray) return (array)$s;
+		else return $s;
 	}
 	
 	
