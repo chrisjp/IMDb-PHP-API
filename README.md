@@ -28,3 +28,21 @@
     // $movie->title => "The Godfather"
     // $movie->rating => "8.1"
     // $movie->year => "1972"
+
+### Search for a person by name
+
+    // Returns an array containing objects of matching titles
+    $people = $imdb->person_by_name("Christian Bale"); 
+    
+    // $people[0]->name => "Christian Bale"
+    // $people[0]->nconst => "nm0000288"
+    // ... 
+
+### Get a person by their imdb_id
+
+    // Returns an object containing the movie's data
+    $person = $imdb->person_by_id("nm0000288");
+
+    // $person->name => "Christian Bale"
+    // $person->birthday_datestamp => "1974-01-30"
+    // $person->birthplace => "Haverfordwest, Pembrokeshire, Wales, UK"

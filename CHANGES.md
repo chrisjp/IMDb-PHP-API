@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.3 - March 8, 2012
+* Added: Can now search for people by name (or a person with their IMDb ID) (test files included)
+* Added: Film tagline now returned.
+* Added: Arrays of genres, writers, directors and actors are now returned in addition to a comma-separated list of them.
+* Fixed: PHP warning when film has no genres.
+* Fixed: Adult genre filter now checks all genres instead of only the first one listed.
+
 ## v0.2.3 - December 11, 2011
 * Added runtime (in minutes) to returned data from find_by_id().
 

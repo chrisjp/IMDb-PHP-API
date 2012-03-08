@@ -94,6 +94,51 @@ class IMDb
 		return $matches;
 	}
 	
+	// Search IMDb by ID of person
+	function person_by_id($id){
+		if(strpos($id, "nm")!==0) $id = "nm".$id;
+		$requestURL = $this->build_url('name/maindetails', $id, 'nconst');
+		$json = $this->fetchJSON($requestURL);
+
+		if(is_object($json->error)){
+			$data = $this->errorResponse($json->error);
+		}
+		else{
+			$data = $this->summary ? $this->summarise_person($json->data) : $json->data;
+		}
+		
+		return $data;
+	}
+	
+	// Search IMDb by name of person
+	function person_by_name($name){
+		$requestURL = $this->build_url('find', $name, 'q');		
+		$json = $this->fetchJSON($requestURL);
+		
+		// We'll usually have several "lists" returned in the JSON. Combine all these into one array.
+		if(empty($json->data->results)){
+			// IMDb doesn't return a proper error response in the event of 0 results being returned
+			// so set our own failure message.
+			$error->message = "No results found.";
+			$matches = $this->errorResponse($error, true);
+		}
+		else{
+			$results = $json->data->results;
+			$matches = array();
+			
+			if($this->summary){
+				$matches = $this->summarise_people($results);
+			}
+			else{
+				for($i=0; $i<count($results); $i++){
+					$matches = array_merge($matches, $results[$i]->list);
+				}
+			}
+		}
+		
+		return $matches;
+	}
+	
 	// Summarise - only return the most pertinent data (when returning data from IMDb ID)
 	function summarise($obj){
 	
@@ -238,6 +283,87 @@ class IMDb
 					
 					// Type
 					$s[$t]->type = $obj->type;
+					
+					$t++;
+					
+					// Reached limit of titles?
+					if($t==$this->titlesLimit) break 2;
+				}
+			}
+		}
+		
+		// Response messages
+		if($t>0){
+			$s['response'] = 1;
+			$s['response_msg'] = "Success";
+		}
+		else{
+			$s['response'] = 0;
+			$s['response_msg'] = "Fail";
+		}
+		
+		return $s;
+	}
+	
+	// Summarise Person - only return the most pertinent data (when returning data from IMDb ID)
+	function summarise_person($obj){
+	
+		// ID with and without 'tt' prefix
+		$s->id = substr($obj->nconst, 2);
+		$s->nconst = $obj->nconst;
+			
+		// Name
+		$s->name = $obj->name;
+		$s->real_name = $obj->real_name;
+			
+		// Biography
+		$s->bio = $obj->bio;
+			
+		// Birth and Death
+		$s->birthday = !empty($obj->birth->date->normal) ? date('j M Y', strtotime($obj->birth->date->normal)) : "";
+		$s->birthday_datestamp = $obj->birth->date->normal;
+		$s->birthplace = $obj->birth->place;
+		$s->deathday = !empty($obj->death->date->normal) ? date('j M Y', strtotime($obj->death->date->normal)) : "";
+		$s->deathday_datestamp = $obj->death->date->normal;
+		$s->deathplace = $obj->death->place;
+		
+		// Known For
+		$s->known_for = $obj->known_for;
+					
+		// Image
+		$s->image = $obj->image->url;
+		$s->photos = $obj->photos;
+			
+		// Response messages
+		$s->response = 1;
+		$s->response_msg = "Success";
+		
+		return $s;
+	}
+	
+	// Summarise - only return the most pertinent data (when returning multiple title data)
+	function summarise_people($objs){
+		
+		$t=0;
+				
+		for($i=0; $i<count($objs); $i++){
+			$list = $objs[$i]->list;
+			
+			// In each "list" of results we only want to return titles so ignore other results such as actors, characters etc.
+			foreach($list as $obj){
+				if(!empty($obj->nconst)){
+					// ID with and without 'tt' prefix
+					$s[$t]->id = substr($obj->nconst, 2);
+					$s[$t]->nconst = $obj->nconst;
+					
+					// Name
+					$s[$t]->name = $obj->name;
+					
+					// Known For
+					$s[$t]->known_for = $obj->known_for;
+					
+					// Image
+					$s[$t]->image = $obj->image->url;
 					
 					$t++;
 					
