@@ -109,38 +109,68 @@ class IMDb
 			// Year
 			$s->year = $obj->year;
 			
-			// Plot
+			// Plot and Tagline
 			$s->plot = $obj->plot->outline;
+			$s->tagline = $obj->tagline;
 			
 			// Votes + Rating
 			$s->rating = $obj->rating;
 			$s->votes = $obj->num_votes;
 			
-			// Comma-seperated list of genres (this is always an array)
-			$s->genre = implode(", ", $obj->genres);
+			// Comma-seperated list of genre
+			if(is_array($obj->genres)){
+				$s->genre = implode(", ", $obj->genres);
+				$s->genres = $obj->genres;
+			}else{
+				$s->genre = "";
+				$s->genres = "";
+			}
 			
 			// Comma-seperated list of writer(s)
 			if(is_array($obj->writers_summary)){
-				foreach($obj->writers_summary as $writers){ $writer[] = $writers->name->name; }
+				$i=0;
+				foreach($obj->writers_summary as $writers){
+					$writer[$i] = $writers->name->name;
+					$s->writers_summary[$i]['nconst'] = $writers->name->nconst;
+					$s->writers_summary[$i]['name'] = $writers->name->name;
+					$s->writers_summary[$i]['attr'] = $writers->attr;
+					$i++;
+				}
 				$s->writer = implode(", ", $writer);
 			}else{
 				$s->writer = "";
+				$s->writers_summary = "";
 			}
 			
 			// Comma-seperated list of director(s)
 			if(is_array($obj->directors_summary)){
-				foreach($obj->directors_summary as $directors){ $director[] = $directors->name->name; }
+				$i=0;
+				foreach($obj->directors_summary as $directors){
+					$director[] = $directors->name->name;
+					$s->directors_summary[$i]['nconst'] = $directors->name->nconst;
+					$s->directors_summary[$i]['name'] = $directors->name->name;
+					$i++;
+				}
 				$s->director = implode(", ", $director);
 			}else{
 				$s->director = "";
+				$s->directors_summary = "";
 			}
 			
 			// Comma-seperated list of actors
-			if(is_array($obj->directors_summary)){
-				foreach($obj->cast_summary as $cast){ $actor[] = $cast->name->name; }
+			if(is_array($obj->cast_summary)){
+				$i=0;
+				foreach($obj->cast_summary as $cast){
+					$actor[] = $cast->name->name;
+					$s->cast_summary[$i]['nconst'] = $cast->name->nconst;
+					$s->cast_summary[$i]['name'] = $cast->name->name;
+					$s->cast_summary[$i]['char'] = $cast->char;
+					$i++;
+				}
 				$s->actors = implode(", ", $actor);
 			}else{
 				$s->actors = "";
+				$s->cast_summary = "";
 			}
 			
 			// Shorthand release date in the format of 'd MMM YYYY' and datestamp
