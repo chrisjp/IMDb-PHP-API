@@ -31,7 +31,7 @@
 
 ### Search for a person by name
 
-    // Returns an array containing objects of matching titles
+    // Returns an array containing objects of matching names
     $people = $imdb->person_by_name("Christian Bale"); 
     
     // $people[0]->name => "Christian Bale"
@@ -40,7 +40,7 @@
 
 ### Get a person by their imdb_id
 
-    // Returns an object containing the movie's data
+    // Returns an object containing the person's data
     $person = $imdb->person_by_id("nm0000288");
 
     // $person->name => "Christian Bale"
