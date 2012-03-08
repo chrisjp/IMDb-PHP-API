@@ -98,7 +98,7 @@ class IMDb
 	function summarise($obj){
 	
 		// If this is not an ignored type...
-		if(!$this->is_ignored($obj->type, $obj->certificate->certificate, $obj->genres[0])){
+		if(!$this->is_ignored($obj->type, $obj->certificate->certificate, $obj->genres)){
 			// ID with and without 'tt' prefix
 			$s->id = substr($obj->tconst, 2);
 			$s->tconst = $obj->tconst;
@@ -117,7 +117,7 @@ class IMDb
 			$s->rating = $obj->rating;
 			$s->votes = $obj->num_votes;
 			
-			// Comma-seperated list of genre
+			// Genres
 			if(is_array($obj->genres)){
 				$s->genre = implode(", ", $obj->genres);
 				$s->genres = $obj->genres;
@@ -126,7 +126,7 @@ class IMDb
 				$s->genres = "";
 			}
 			
-			// Comma-seperated list of writer(s)
+			// Writers
 			if(is_array($obj->writers_summary)){
 				$i=0;
 				foreach($obj->writers_summary as $writers){
@@ -142,7 +142,7 @@ class IMDb
 				$s->writers_summary = "";
 			}
 			
-			// Comma-seperated list of director(s)
+			// Directors
 			if(is_array($obj->directors_summary)){
 				$i=0;
 				foreach($obj->directors_summary as $directors){
@@ -157,7 +157,7 @@ class IMDb
 				$s->directors_summary = "";
 			}
 			
-			// Comma-seperated list of actors
+			// Cast
 			if(is_array($obj->cast_summary)){
 				$i=0;
 				foreach($obj->cast_summary as $cast){
@@ -261,10 +261,10 @@ class IMDb
 	}
 	
 	// Check if a title should be ignored. Returns true for yes, false for no.
-	function is_ignored($type, $cert="", $genre=""){
+	function is_ignored($type, $cert="", $genre=array()){
 		if($this->forceReturn) return false;
 		if(in_array($type, $this->ignoreTypes)) return true;
-		if($this->ignoreAdult AND ($cert=="X" OR $genre=="Adult")) return true;
+		if($this->ignoreAdult AND ($cert=="X" OR in_array("Adult",$genre))) return true;
 		
 		return false;
 	}
