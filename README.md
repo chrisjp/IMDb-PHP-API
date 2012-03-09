@@ -46,3 +46,22 @@
     // $person->name => "Christian Bale"
     // $person->birthday_datestamp => "1974-01-30"
     // $person->birthplace => "Haverfordwest, Pembrokeshire, Wales, UK"
+    
+### Charts
+
+    // Returns an array containing objects of of the top 250 films
+    $movies = $imdb->chart_top();
+    // Or for the Bottom 100...
+    $movies = $imdb->chart_bottom();
+    
+    // $movies[0]->title => "The Shawshank Redemption"
+    // $movies[0]->year => "1994"
+    // $movies[0]->tconst => "tt0111161"
+    // ... 
+    // $movies[1]->title => "The Godfather"
+    // ...
+    
+    // Similarly, the following function will return the Box Office (US) respectively.
+    // Note that the format of the data returned differs slightly from the above 2 charts
+    $movies = $imdb->boxoffice();
+    

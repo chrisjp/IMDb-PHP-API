@@ -32,7 +32,7 @@ class IMDb
 	}
 	
 	// Build URL based on the given parameters
-	function build_url($method, $query, $parameter){
+	function build_url($method, $query="", $parameter=""){
 		$url = $this->baseurl.$method.'?';
 		
 		// Loop through parameters
@@ -44,7 +44,7 @@ class IMDb
 		$url .= 'timestamp='.$_SERVER['REQUEST_TIME'].'&';
 		
 		// Add URLEncode'd query
-		$url .= $parameter.'='.urlencode($query);
+		if(!empty($parameter) AND !empty($query)) $url .= $parameter.'='.urlencode($query);
 		
 		return $url;
 	}
@@ -137,6 +137,51 @@ class IMDb
 		}
 		
 		return $matches;
+	}
+	
+	// Top 250 Chart
+	function chart_top(){
+		$requestURL = $this->build_url('chart/top');
+		$json = $this->fetchJSON($requestURL);
+
+		if(is_object($json->error)){
+			$data = $this->errorResponse($json->error);
+		}
+		else{
+			$data = $json->data->list->list;
+		}
+		
+		return $data;
+	}
+	
+	// Bottom 100 Chart
+	function chart_bottom(){
+		$requestURL = $this->build_url('chart/bottom');
+		$json = $this->fetchJSON($requestURL);
+
+		if(is_object($json->error)){
+			$data = $this->errorResponse($json->error);
+		}
+		else{
+			$data = $json->data->list->list;
+		}
+		
+		return $data;
+	}
+	
+	// Box Office (US)
+	function boxoffice(){
+		$requestURL = $this->build_url('boxoffice');
+		$json = $this->fetchJSON($requestURL);
+
+		if(is_object($json->error)){
+			$data = $this->errorResponse($json->error);
+		}
+		else{
+			$data = $json->data;
+		}
+		
+		return $data;
 	}
 	
 	// Summarise - only return the most pertinent data (when returning data from IMDb ID)

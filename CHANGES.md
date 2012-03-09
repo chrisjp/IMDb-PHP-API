@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.4 - March 9, 2012
+* Added: Can now get top charts data including the Top 250, Bottom 100, and Box Office (US)
+
 ## v0.3 - March 8, 2012
 * Added: Can now search for people by name (or a person with their IMDb ID) (test files included)
 * Added: Film tagline now returned.
