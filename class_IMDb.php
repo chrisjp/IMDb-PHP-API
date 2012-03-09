@@ -435,7 +435,7 @@ class IMDb
 	function is_ignored($type, $cert="", $genre=array()){
 		if($this->forceReturn) return false;
 		if(in_array($type, $this->ignoreTypes)) return true;
-		if($this->ignoreAdult AND ($cert=="X" OR in_array("Adult",$genre))) return true;
+		if($this->ignoreAdult AND ($cert=="X" OR (!empty($genre) AND in_array("Adult",$genre)))) return true;
 		
 		return false;
 	}
