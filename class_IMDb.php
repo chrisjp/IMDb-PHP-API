@@ -2,15 +2,17 @@
 class IMDb
 {
 	
-	private $baseurl = 'http://app.imdb.com/';
+	private $baseurl = 'https://app.imdb.com/';
 	private $params = array(
 						'api'		=> 'v1',
 						'appid'		=> 'iphone1_1',
 						'apiPolicy'	=> 'app1_1',
 						'apiKey'	=> '2wex6aeu6a8q9e49k7sfvufd6rhh0n',
 						'locale'	=> 'en_US',
+						'timestamp'	=> '0',
 					  );
 	private $anonymiser = 'http://anonymouse.org/cgi-bin/anon-www.cgi/';	// URL that will be prepended to the generated API URL.
+	public $anonymise = false;
 	public $summary = true;			// Set to true to return a summary of the film's details. Set to false to return everything.
 	public $titlesLimit = 0;		// Limit the number of films returned by find_by_title() when summarised. 0 = unlimited (NOTE: IMDb returns a maximum of 50 results).
 	
@@ -26,27 +28,29 @@ class IMDb
 	public $forceReturn = false;
 			
 	function __construct($anonymise=false, $summary=true, $titlesLimit=0){
-		if($anonymise) 				$this->baseurl = $this->anonymiser . $this->baseurl;	// prepend anonymizer to baseurl if needed
-		if(!$summary) 				$this->summary=false;									// overriding the default?
-		if(intval($titlesLimit)>0)	$this->titlesLimit = intval($titlesLimit);				// Set titles limit if required
+		$this->anonymise = $anonymise;		// should we anonymise requests?
+		if(!$summary) $this->summary=false;	// overriding the default?
+		if(intval($titlesLimit)>0)	$this->titlesLimit = intval($titlesLimit);		// Set titles limit if required
 	}
 	
 	// Build URL based on the given parameters
 	function build_url($method, $query="", $parameter=""){
-		$url = $this->baseurl.$method.'?';
 		
-		// Loop through parameters
-		foreach($this->params as $key => $value){
-			$url .= $key.'='.$value.'&';
-		}
+		// Set timestamp parameter to current time
+		$this->params['timestamp'] = $_SERVER['REQUEST_TIME'];
 		
-		// Add timestamp
-		$url .= 'timestamp='.$_SERVER['REQUEST_TIME'].'&';
+		// Build the URL and append query if we have one
+		$unsignedUrl = $this->baseurl.$method.'?'.http_build_query($this->params);
+		if(!empty($parameter) AND !empty($query)) $unsignedUrl .= '&'.$parameter.'='.urlencode($query);
 		
-		// Add URLEncode'd query
-		if(!empty($parameter) AND !empty($query)) $url .= $parameter.'='.urlencode($query);
+		// Generate a signature and append to unsignedUrl to sign it.
+		$sig = hash_hmac('sha1', $unsignedUrl, $this->params['apiKey']);
+		$signedUrl = $unsignedUrl.'&sig=app1-'.$sig;
 		
-		return $url;
+		// Anonymise the request?
+		$signedUrl = $this->anonymise ? $this->anonymiser.$signedUrl : $signedUrl;
+		
+		return $signedUrl;
 	}
 	
 	// Search IMDb by ID of film
