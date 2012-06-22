@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.4.1 - June 22, 2012
+* Fixed: build_url() now generates a signature to sign the request, this fixes find_by_title() returning an empty result set.
+* Known Issue: Anonymising find_by_title() requests will always return an empty result set. As of writing this, the only solution is simply to set $anonymise to false.
+
 ## v0.4 - March 9, 2012
 * Added: Can now get top charts data including the Top 250, Bottom 100, and Box Office (US)
 
